@@ -87,28 +87,34 @@ int randint(int j,int k){
     return i;
 }
 
-void weigh(int (*values)[9],int (*weights)[9],int x,int y,int n){
-    if((*values)[x+((y+1)%3)*3]!=(n+1)%2 && (*values)[x+((y+2)%3)*3]!=(n+1)%2){ //column
-        (*weights)[x+((y+1)%3)*3]++;
-        (*weights)[x+((y+2)%3)*3]++;
-    }
-    if((*values)[(x+1)%3+ y*3]!=(n+1)%2 && (*values)[(x+2)%3+ y*3]!=(n+1)%2){ //row
-        (*weights)[(x+1)%3+ y*3]++;
-        (*weights)[(x+2)%3+ y*3]++;
-    }
-    if(x==y){   // \diagonal
-        if((*values)[(x+1)%3 + 3*((y+1)%3)]!=(n+1)%2 && (*values)[(x+2)%3 + 3*((y+2)%3)]!=(n+1)%2){
-            (*weights)[(x+1)%3 + 3*((y+1)%3)]++;
-            (*weights)[(x+2)%3 + 3*((y+2)%3)]++;
+void weigh(int (*values)[9],int (*weights)[9],int n){
+    for (int i=0;i<9;i++){
+        if ((*values)[i]==n){
+            int x=i%3;int y=i/3;
+            if((*values)[x+((y+1)%3)*3]!=(n+1)%2 && (*values)[x+((y+2)%3)*3]!=(n+1)%2){ //column
+                (*weights)[x+((y+1)%3)*3]++;
+                (*weights)[x+((y+2)%3)*3]++;
+            }
+            if((*values)[(x+1)%3+ y*3]!=(n+1)%2 && (*values)[(x+2)%3+ y*3]!=(n+1)%2){ //row
+                (*weights)[(x+1)%3+ y*3]++;
+                (*weights)[(x+2)%3+ y*3]++;
+            }
+            if(x==y){   // \diagonal
+                if((*values)[(x+1)%3 + 3*((y+1)%3)]!=(n+1)%2 && (*values)[(x+2)%3 + 3*((y+2)%3)]!=(n+1)%2){
+                    (*weights)[(x+1)%3 + 3*((y+1)%3)]++;
+                    (*weights)[(x+2)%3 + 3*((y+2)%3)]++;
+                }
+            }
+            if(x+y==2){ // /diagonal
+                if((*values)[2*(1+(y+1)%3)]!=(n+1)%2 && (*values)[2*(1+(y+2)%3)]!=(n+1)%2){
+                    (*weights)[2*(1+(y+1)%3)]++;
+                    (*weights)[2*(1+(y+2)%3)]++;
+                }
+                
+            }
         }
     }
-    if(x+y==2){ // /diagonal
-        if((*values)[2*(1+(y+1)%3)]!=(n+1)%2 && (*values)[2*(1+(y+2)%3)]!=(n+1)%2){
-            (*weights)[2*(1+(y+1)%3)]++;
-            (*weights)[2*(1+(y+2)%3)]++;
-        }
-        
-    }
+
     return;
 }
 
@@ -131,7 +137,7 @@ int to_win(int (*values)[9],int n){ // n by which we play , if 0 we play 0
     return 100;
 }
 
-void random_move(int (*values)[9],int n){
+void normal_move(int (*values)[9],int n){
     int t = to_win(values,0);
     if(t!=100){    // if can win ,then winning is firstly imp 
         (*values)[t] = 0;
@@ -146,17 +152,43 @@ void random_move(int (*values)[9],int n){
 
     int weights[9] = {0,0,0,0,0,0,0,0,0};
 
+    weigh(values,&weights,0);
+    weigh(values,&weights,1);
+    
+    int values_copy[9];
+    cout << "\n";
     for (int i=0;i<9;i++){
-        if (values[i]==0){
-            weigh(values,&weights,i%3,i/3,0);
-        }
+        cout << weights[i];
     }
-
+    cout << "\n";
     int best[9], count = 0;
-    int max_weight = *(max_element(&weights[0],&weights[0]+8));
+    int min_lookout=10000;
+    int max_weight = *(max_element(weights,weights+9));
     for(int i = 0; i < 9; i++) {
         if((*values)[i] == 2){
-            if((weights)[i]==max_weight) best[count++] = i;
+            if((weights)[i]==max_weight){
+                copy(&((*values)[0]),&((*values)[0])+9,values_copy);
+                values_copy[i]=0;
+                int lookout_weights[9] = {0,0,0,0,0,0,0,0,0};
+                weigh(&values_copy,&lookout_weights,1);
+                int lookout = *(max_element(lookout_weights,lookout_weights+9));
+                print_grid(&values_copy);
+                cout << "\n";
+                for (int i=0;i<9;i++){
+                    cout << lookout_weights[i];
+                }
+                cout << "\n";
+                if (min_lookout > lookout){
+                    min_lookout=lookout;
+                    count=0;
+                    best[count++] = i;
+                    cout << "count " << count << "\n";
+                }
+                else if (min_lookout == lookout){
+                    best[count++] = i;
+                }
+                
+            }
         }
     }
     if(count == 0) return;
@@ -187,7 +219,7 @@ void play_random(int (*values)[9]){
         cout << "\n" << "game draw" << "\n";
         return;
     }
-    random_move(values,0);
+    normal_move(values,0);
     play_random(values);
 }
 
@@ -196,12 +228,12 @@ int both_random(int (*values)[9]){
     if(t!=2){
         return t;
     }
-    random_move(values,1);
+    normal_move(values,1);
     t =check_grid(values);
     if(t!=2){
         return t;
     }
-    random_move(values,0);
+    normal_move(values,0);
     return both_random(values);
 }
 

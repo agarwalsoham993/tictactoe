@@ -138,29 +138,23 @@ int to_win(int (*values)[9],int n){ // n by which we play , if 0 we play 0
 }
 
 void normal_move(int (*values)[9],int n){
-    int t = to_win(values,0);
+    int t = to_win(values,n);
     if(t!=100){    // if can win ,then winning is firstly imp 
-        (*values)[t] = 0;
-        cout << "\n will win \n";
+        (*values)[t] = n;
         return;
     }
-    t = to_win(values,1);
+    t = to_win(values,(n+1)%2);
     if(t!=100){ 
-        (*values)[t] = 0;
+        (*values)[t] = n;
         return;
     }
 
     int weights[9] = {0,0,0,0,0,0,0,0,0};
 
-    weigh(values,&weights,0);
-    weigh(values,&weights,1);
+    weigh(values,&weights,n);
+    weigh(values,&weights,(n+1)%2);
     
     int values_copy[9];
-    cout << "\n";
-    for (int i=0;i<9;i++){
-        cout << weights[i];
-    }
-    cout << "\n";
     int best[9], count = 0;
     int min_lookout=10000;
     int max_weight = *(max_element(weights,weights+9));
@@ -172,20 +166,13 @@ void normal_move(int (*values)[9],int n){
                 int lookout_weights[9] = {0,0,0,0,0,0,0,0,0};
                 weigh(&values_copy,&lookout_weights,1);
                 int lookout = *(max_element(lookout_weights,lookout_weights+9));
-                print_grid(&values_copy);
-                cout << "\n";
-                for (int i=0;i<9;i++){
-                    cout << lookout_weights[i];
-                }
-                cout << "\n";
                 if (min_lookout > lookout){
                     min_lookout=lookout;
                     count=0;
                     best[count++] = i;
-                    cout << "count " << count << "\n";
                 }
                 else if (min_lookout == lookout){
-                    best[count++] = i;
+                best[count++] = i;
                 }
                 
             }
@@ -198,7 +185,51 @@ void normal_move(int (*values)[9],int n){
     return;
 }
 
-void play_random(int (*values)[9]){
+int return_normal_move(int (*values)[9],int n){
+    int t = to_win(values,n);
+    if(t!=100){    // if can win ,then winning is firstly imp
+        return t;
+    }
+    t = to_win(values,(n+1)%2);
+    if(t!=100){
+        return t;
+    }
+
+    int weights[9] = {0,0,0,0,0,0,0,0,0};
+
+    weigh(values,&weights,n);
+    weigh(values,&weights,(n+1)%2);
+    
+    int values_copy[9];
+    int best[9], count = 0;
+    int min_lookout=10000;
+    int max_weight = *(max_element(weights,weights+9));
+    for(int i = 0; i < 9; i++) {
+        if((*values)[i] == 2){
+            if((weights)[i]==max_weight){
+                copy(&((*values)[0]),&((*values)[0])+9,values_copy);
+                values_copy[i]=0;
+                int lookout_weights[9] = {0,0,0,0,0,0,0,0,0};
+                weigh(&values_copy,&lookout_weights,1);
+                int lookout = *(max_element(lookout_weights,lookout_weights+9));
+                if (min_lookout > lookout){
+                    min_lookout=lookout;
+                    count=0;
+                    best[count++] = i;
+                }
+                else if (min_lookout == lookout){
+                best[count++] = i;
+                }
+                
+            }
+        }
+    }
+    
+    int ind = best[randint(0, count)];
+    return ind;
+}
+
+void play_normal(int (*values)[9]){
     print_grid(values);
     int t = check_grid(values);
     if(t==0){
@@ -209,6 +240,8 @@ void play_random(int (*values)[9]){
         cout << "\n" << "game draw" << "\n";
         return;
     }
+
+    cout << "\n" << "the algorithm predicted move is " << return_normal_move(values,1)+1 << "\n";
     take_user_input(values,1);
     t =check_grid(values);
     if(t==1){
@@ -220,10 +253,10 @@ void play_random(int (*values)[9]){
         return;
     }
     normal_move(values,0);
-    play_random(values);
+    play_normal(values);
 }
 
-int both_random(int (*values)[9]){
+int both_normal(int (*values)[9]){
     int t = check_grid(values);
     if(t!=2){
         return t;
@@ -234,11 +267,23 @@ int both_random(int (*values)[9]){
         return t;
     }
     normal_move(values,0);
-    return both_random(values);
+    return both_normal(values);
 }
 
 int main(){
     srand((unsigned)time(0)); 
-    int values[9] = {2,2,2,2,2,2,2,2,2};
-    play_random(&values);
+    // int values[9] = {2,2,2,2,2,2,2,2,2};
+    // play_normal(&values);
+
+    int win_x = 0;int lose_x =0;int draw = 0;int t;
+    for(int i=0;i<1000;i++){
+        int values[9] = {2,2,2,2,2,2,2,2,2};
+        t = both_normal(&values);
+        if(t==1) win_x++;
+        else if (t==0) lose_x++;
+        else if (t==3) draw++;
+        // print_grid(&values);
+    }
+
+    cout << "\n no of wins who started" << win_x << "\n no of loss who started" << lose_x << "\n no of draws" << draw << "\n";
 }

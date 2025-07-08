@@ -10,3 +10,6 @@ the next version #normal_tictactoe is a more enhanced version of the random vers
   the pattern building is faster and effecient than any brute force method/
 ![image](https://github.com/user-attachments/assets/d58c4683-4576-4560-bc66-f478b4ec3b85)
 Reviewed and tested the patterns for bot's moves  , Penalty of 30ms while reducing the loss of the beginner by 100%.
+
+optimal_version :
+![image](https://github.com/user-attachments/assets/da852dd6-8692-4f74-bd31-7da6535f8847)

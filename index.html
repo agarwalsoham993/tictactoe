@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>C++ Tic-Tac-Toe (Optimal Bot)</title>
+    <!-- CSS is unchanged -->
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #3f3a3a; color: #eee; }
+        h1 { color: #00aaff; }
+        h2 { color: #00aaff; }
+        #status { font-size: 1.5em; margin: 20px; height: 30px; }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            justify-content: center;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #444;
+            border: 2px solid #555;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .cell:hover { background-color: #505050; }
+        .cell.X { color: #ff4757; }
+        .cell.O { color: #5352ed; }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #00aaff;
+            color: white;
+        }
+        .disabled { pointer-events: none; opacity: 0.6; }
+    </style>
+</head>
+<body>
+    <h1>Tic-Tac-Toe bot</h1>
+    <h2>Using optimal bot logic</h2>
+    <div id="status">Loading...</div>
+    <div id="board"></div>
+    <button id="resetButton">New Game</button>
+
+    <script>
+        const boardElement = document.getElementById('board');
+        const statusElement = document.getElementById('status');
+        const resetButton = document.getElementById('resetButton');
+
+        // This part is unchanged
+        for (let i = 0; i < 9; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.index = i;
+            cell.addEventListener('click', () => onCellClick(i));
+            boardElement.appendChild(cell);
+        }
+
+        async function onCellClick(index) {
+            try {
+                const response = await fetch('/api/play', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ move: index })
+                });
+                if (!response.ok) throw new Error(await response.text());
+                const gameState = await response.json();
+                updateUI(gameState);
+            } catch (error) {
+                console.error('Error making move:', error);
+                statusElement.textContent = "Error: " + error.message;
+            }
+        }
+
+        async function resetGame() {
+            try {
+                const response = await fetch('/api/reset', { method: 'POST' });
+                const gameState = await response.json();
+                updateUI(gameState);
+            } catch (error) {
+                console.error('Error resetting game:', error);
+            }
+        }
+
+        // --- THIS FUNCTION IS UPDATED ---
+        function updateUI(gameState) {
+            gameState.board.forEach((value, index) => {
+                const cell = boardElement.children[index];
+                cell.textContent = value === 1 ? 'X' : value === 0 ? 'O' : '';
+                cell.classList.remove('X', 'O');
+                if (value === 1) cell.classList.add('X');
+                if (value === 0) cell.classList.add('O');
+            });
+
+            let message = '';
+            let isGameOver = false;
+            switch (gameState.status) {
+                case 1: message = 'You Win! (X)'; isGameOver = true; break;
+                case 0: message = 'Bot Wins! (O)'; isGameOver = true; break;
+                case 3: message = "It's a Draw!"; isGameOver = true; break;
+                case 2: // Game is ongoing
+                    // Count empty cells to determine whose turn it is.
+                    // 9 empty cells -> X's turn. 8 empty cells -> O's turn. etc.
+                    // If empty cells are odd, it's Player's (X) turn.
+                    const emptyCells = gameState.board.filter(v => v === 2).length;
+                    message = (emptyCells % 2 !== 0) ? "Your Turn (X)" : "Bot's Turn (O)";
+                    break;
+            }
+            statusElement.textContent = message;
+
+            if (isGameOver) {
+                boardElement.classList.add('disabled');
+            } else {
+                boardElement.classList.remove('disabled');
+            }
+        }
+        
+        resetButton.addEventListener('click', resetGame);
+        resetGame(); // Initial game load
+    </script>
+</body>
+</html>
